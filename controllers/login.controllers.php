@@ -7,7 +7,7 @@ if(!empty($_POST["btnIngresar"])){
         $usuario = $_POST["usuario"];
         $clave = $_POST["claveacceso"];
         $data = $cn->query("CALL spu_verificar_usuarios($usuario, $clave)")
-        if($datos = $data->fetch_object()){
+        if ($datos = $data->fetch_object()){
             header("location:productos.views.html")
         }else{
             echo "Acceso denegado";
