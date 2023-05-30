@@ -20,9 +20,12 @@ CREATE TABLE Usuarios
 	idpersona 	INT 				NOT NULL, -- FK
 	usuario		VARCHAR(30) 	NOT NULL,
 	claveacceso	VARCHAR(30)		NOT NULL,
+	nivelacceso CHAR(3)			NOT NULL, -- ADM = Administrador, SPV = Supervisor, AST = Asistente
+	estado		CHAR(1)			NOT NULL
 	CONSTRAINT fk_idpersona FOREIGN KEY (idpersona) REFERENCES Personas(idpersona)
 )ENGINE = INNODB;
 
+ALTER TABLE Usuarios ADD CONSTRAINT uk_usuario UNIQUE (usuario);
 
 CREATE TABLE Proveedores
 (
@@ -114,11 +117,21 @@ CALL spu_registrar_personas("Lucio", "Medina Llanos", "970664419", "Jr. Alva mau
 -- ***************************************************************************************************************************************
 -- SP DE USUARIOS
 -- LISTAR
+/*
 DELIMITER $$
 CREATE PROCEDURE spu_listar_usuarios()
 BEGIN 
-	SELECT * FROM Usuarios;
+	SELECT * FROM Usuarios where estado = '1';
 END
+*/
+
+DELIMITER $$
+CREATE PROCEDURE spu_listar_usuarios()
+BEGIN
+    SELECT P.*, C.nombres, apellidos
+    FROM Usuarios P
+    INNER JOIN Personas C ON P.idpersona = C.idpersona;
+END $$
 
 CALL spu_listar_usuarios
 
@@ -127,21 +140,26 @@ DELIMITER $$
 CREATE PROCEDURE spu_registrar_usuarios(
     IN _idpersona INT,
     IN _usuario VARCHAR(30),
-    IN _claveacceso VARCHAR(30)
+    IN _claveacceso VARCHAR(30),
+    IN _nivelacceso	CHAR(3)
 )
 BEGIN
-    DECLARE user_count INT;
-    SELECT COUNT(*) INTO user_count FROM Usuarios WHERE usuario = _usuario;
-    
-    IF user_count > 0 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Este usuario ya está registrado.';
-    ELSE
-        INSERT INTO Usuarios (idpersona, usuario, claveacceso) VALUES (_idpersona, _usuario, _claveacceso);
-    END IF;
+	INSERT INTO Usuarios (idpersona, usuario, claveacceso, nivelacceso) VALUES (_idpersona, _usuario, _claveacceso, _nivelacceso);
 END$$
 
 CALL spu_registrar_usuarios(1, "Lucio", "lucio17")
 
+-- ELIMINAR
+DELIMITER $$
+CREATE PROCEDURE spu_eliminar_usuarios(
+	IN _idusuario INT
+)
+BEGIN
+	UPDATE Usuarios SET estado = '0' WHERE idusuario = _idusuario;
+END $$
+
+-- Encritando clave lucio17
+UPDATE usuarios SET claveacceso = '$2y$10$c1JU5EmCyLhoJAuIN0x4mu7sw424ibjy3E/F.Umwm71JImz0GuzeG' WHERE idusuario = 1;
 
 -- ***************************************************************************************************************************************
 -- SP DE CATEGORIAS
@@ -163,7 +181,7 @@ BEGIN
 	INSERT INTO Categorias (nombrecategoria) VALUES (_nombrecategoria);
 END
 
-CALL spu_registrar_categorias("Electrodomésticos")
+CALL spu_registrar_categorias("Videojuegos")
 
 -- ***************************************************************************************************************************************
 -- SP DE PRODUCTOS
@@ -189,7 +207,7 @@ CALL spu_listar_productos
 -- REGISTRAR
 DELIMITER $$
 CREATE PROCEDURE spu_registrar_productos(
-IN _idcategoria		INT,
+IN _idcategoria	VARCHAR(30),
 IN _nombreproducto	VARCHAR(30),
 IN _descripcion 		VARCHAR(100),
 IN _precio				DECIMAL(9,2),
@@ -243,15 +261,7 @@ END $$
 
 CALL spu_obtener_productos(2)
 
--- LOGIN	
-DELIMITER $$
-CREATE PROCEDURE spu_verificar_usuarios(
-	IN _usuario 	VARCHAR(30),
-	IN _claveacceso VARCHAR(30)
-)
-BEGIN
-	SELECT * FROM Usuarios WHERE usuario = _usuario AND claveacceso = _claveacceso;
-END $$
+
 
 
 

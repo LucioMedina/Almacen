@@ -1,3 +1,11 @@
+<?php
+/*
+session_start();
+if (!isset($_SESSION['login']) || !$_SESSION['login']['status']){
+    header("Location:../");
+}
+*/
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,24 +14,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Almacen</title>
 
-<!-- CSS -->
-<link rel="stylesheet" href="style.css">
-
   <!-- BS5 -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
 
 </head>
 <body>
-
-  <header>
-    <h2 class="logo">Logo</h2>
-    <nav class="navigation">
-      <a href="#index.html">Home</a>
-      <a href="productos.views.html">Productos</a>
-      <button class="btnLogin-popup">Login</button>
-    </nav>
-  </header>
   
   <div class="container">
     <h1>Productos del Almacen</h1>
@@ -35,19 +31,15 @@
       <div class="row mt-3">
         <!--Formulario-->
         <div class="col-md-4">
-          <form action="" autocomplete="off" id="form-automoviles">
+          <form action="" autocomplete="off" id="form-productos">
             <div class="card">
               <div class="card-header">
                 Registro de productos
               </div>
               <div class="card-body">
                 <div class="mb-3">
-                  <label for="categoria" class="form-label">Categoria</label>
-                  <select id="lsCategoria" class="form-select form-select-sm" autofocus>
-                    <option value="">Seleccione una categoria</option>
-                    <option value=""></option>
-                    <option value=""></option>
-                  </select>
+                  <label for="categoria" class="form-label">ID Categoria</label>
+                  <input type="text" class="form-control form-control-sm" id="idCategoria">
                 </div>
                 <div class="mb-3">
                   <label for="nombre" class="form-label">Nombre</label>
@@ -67,7 +59,7 @@
                 </div>
                 <div class="card-footer text-muted">
                   <div class="d-grid gap-2">
-                    <button class="btn btn-sm btn-success" id="guardar" type="button">Guardar</button>
+                    <button class="btn btn-sm btn-success" id="btGuardar" type="button">Guardar</button>
                     <button class="btn btn-sm btn-secondary" type="reset">Reiniciar</button>
                   </div>
                 </div>
@@ -81,7 +73,7 @@
             <thead class="bg-primary text-white">
               <tr>
                 <th>ID Producto</th>
-                <th>ID Categoria</th>
+                <th>Categoria</th>
                 <th>Nombre</th>
                 <th>Descripcion</th>
                 <th>Precio</th>
@@ -117,6 +109,10 @@
                       <label for="apellidos" class="form-label">Nombre:</label>
                       <input type="text" class="form-control" id="nombreproducto" readonly>
                   </div>
+                  <div class="mb-3">
+                    <label for="apellidos" class="form-label">Categoria:</label>
+                    <input type="text" class="form-control" id="nombreproducto" readonly>
+                </div>
                   <div class="mb-3">
                       <label for="nombres" class="form-label">Descripción:</label>
                       <input type="text" class="form-control" id="descripcion" readonly>
@@ -174,6 +170,7 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", () =>{
+    const btGuardar = document.querySelector("#btGuardar");
     const tabla = document.querySelector("#tablaProductos");
     const cuerpoTabla = document.querySelector("tbody");
     const cuerpoTablaCate = document.querySelector("#BodyCate")
@@ -194,7 +191,7 @@
             const fila = `
             <tr>
               <td>${element.idproducto}</td>
-              <td>${element.idcategoria}</td>  
+              <td>${element.nombrecategoria}</td>  
               <td>${element.nombreproducto}</td>  
               <td>${element.descripcion}</td>  
               <td>${element.precio}</td>
@@ -229,11 +226,41 @@
       })
     }
 
+    function registrarProductos(){
+      if(confirm("¿Estás seguro de grabar?")){
+        const parametros = new URLSearchParams();
+        parametros.append("operacion", "registrarProductos");
+        parametros.append("idcategoria", document.querySelector("#idCategoria").value);
+        parametros.append("nombreproducto", document.querySelector("#nombre").value);
+        parametros.append("descripcion", document.querySelector("#descripcion").value);
+        parametros.append("precio", document.querySelector("#precio").value);
+        parametros.append("stock", document.querySelector("#stock").value);
+
+        fetch("../controllers/productos.controllers.php",{
+          method: 'POST',
+          body: parametros
+        })
+        .then(response => response.json())
+        .then(datos => {
+          if(datos.status){
+            document.querySelector("#form-productos").reset();
+            listarProductos();
+          }else{
+            alert(datos.message);
+          }
+        });
+      }
+    }
+
+    btGuardar.addEventListener("click", registrarProductos);
+
     function buscarProductos(){
       const parametros = new URLSearchParams();
     }
+    
     listarCategorias();
-    listarProductos(); 
+    listarProductos();
+    
   })
 
 </script>

@@ -1,18 +1,57 @@
 <?php
+session_start();
 
-if(!empty($_POST["btnIngresar"])){
-    if(empty($_POST["usuario"]) and empty($_POST["claveacceso"])){
-        echo "LOS CAMPOS ESTAN VACIOS";
-    } else {
-        $usuario = $_POST["usuario"];
-        $clave = $_POST["claveacceso"];
-        $data = $cn->query("CALL spu_verificar_usuarios($usuario, $clave)")
-        if ($datos = $data->fetch_object()){
-            header("location:productos.views.html")
-        }else{
-            echo "Acceso denegado";
-        }
+$_SESSION["login"] = [];
+
+require_once '../models/usuario.php';
+
+if (isset($_POST['operacion'])){
+
+  $usuario = new Usuario();
+
+  if ($_POST['operacion'] == 'login'){
+    
+    $datoObtenido = $usuario->login($_POST['usuario']);
+    
+    $resultado = [
+      "status"        => false,
+      "apellidos"     => "",
+      "nombres"       => "",
+      "nivelacceso"   => "",
+      "mensaje"       => ""
+    ];
+    
+    if ($datoObtenido){
+
+      $claveEncriptada = $datoObtenido['claveacceso'];
+      
+      if (password_verify($_POST['claveIngresada'], $claveEncriptada)){
+        
+        $resultado["status"] = true;
+        $resultado["apellidos"] = $datoObtenido["apellidos"];
+        $resultado["nombres"] = $datoObtenido["nombres"];
+        $resultado["nivelacceso"] = $datoObtenido["nivelacceso"];
+      }else{
+        
+        $resultado["mensaje"] = "Contraseña incorrecta";
+      }
+    }else{
+      
+      $resultado["mensaje"] = "No se encuentra el usuario";
     }
+    
+    $_SESSION["login"] = $resultado;
+    
+    echo json_encode($resultado);
+    
+  }
+
+}
+
+if (isset($_GET['operacion']) == 'destroy'){
+  session_destroy();
+  session_unset();
+  header("location:../");
 }
 
 ?>
